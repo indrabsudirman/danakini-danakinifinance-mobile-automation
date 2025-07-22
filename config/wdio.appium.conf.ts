@@ -6,10 +6,6 @@ const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 const platform = process.env.PLATFORM?.toLowerCase() || "android";
 const device = process.env.DEVICE || "android";
-const company = process.env.COMPANY || "Danakini Finance";
-// const testUserPhone = process.env.TEST_USER_PHONE || "";
-// const testUserFullname = process.env.TEST_USER_FULLNAME || "";
-// const testUserPin = process.env.TEST_USER_PIN || "";
 
 // Capabilities dinamis
 const capabilities = [];
