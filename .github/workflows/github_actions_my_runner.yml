@@ -43,7 +43,6 @@ jobs:
         env:
             PLATFORM: ${{ github.event.inputs.platform }}
             DEVICE: ${{ github.event.inputs.device }}
-            COMPANY: ${{ github.event.inputs.company }}
             TEST_USER_PHONE: ${{ github.event.inputs.userphone }}
             TEST_USER_FULLNAME: ${{ github.event.inputs.userfullname }}
             TEST_USER_PIN: ${{ github.event.inputs.userfullpin }}
@@ -79,9 +78,18 @@ jobs:
               if: always()
               run: npm run allure:generate
 
-            - name: List Allure Report folder (debug)
+            - name: Debug Allure Report folder
               if: always()
-              run: ls -R ./allure-report
+              run: |
+                  echo "=== Checking allure-report structure ==="
+                  ls -la ./allure-report
+                  echo "=== Checking index.html ==="
+                  if [ -f ./allure-report/index.html ]; then
+                    echo "✅ index.html found!"
+                  else
+                    echo "❌ index.html NOT FOUND!"
+                    exit 1
+                  fi
 
             - name: Upload Allure report as artifact
               if: always()
