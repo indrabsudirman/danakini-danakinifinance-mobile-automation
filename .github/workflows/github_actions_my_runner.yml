@@ -55,10 +55,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Clean old Allure folders
+      - name: Clean old Allure results and report
         run: |
-          rm -rf ./allure-results
-          rm -rf ./allure-report
+          echo "🧹 Removing old allure-results and allure-report..."
+          rm -rf allure-results allure-report
 
       - name: Run Tests (Android or iOS)
         run: |
@@ -110,4 +110,5 @@ jobs:
           personal_token: ${{ secrets.GH_PAGES_TOKEN }}
           publish_dir: ./allure-report
           publish_branch: gh-pages
+          force_orphan: true
           commit_message: "Deploy fresh Allure report"
