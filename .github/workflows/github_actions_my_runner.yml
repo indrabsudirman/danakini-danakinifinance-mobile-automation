@@ -52,49 +52,16 @@ jobs:
             - name: Checkout repo
               uses: actions/checkout@v3
 
-            - name: Start Android Emulator
-              if: ${{ github.event.inputs.platform == 'android' }}
+            - name: Run Tests (Android or iOS)
               run: |
-                  echo "🔄 Starting Android Emulator..."
-                  nohup emulator -avd Pixel_8_Pro_API_36 > emulator.log 2>&1 &
-                  adb wait-for-device
-                  adb shell input keyevent 82
-                  echo "✅ Android Emulator is ready."
-
-            - name: Show Current Working Directory
-              run: pwd
-
-            # iOS Simulator
-            - name: Setup iOS Simulator & Install .app
-              if: ${{ github.event.inputs.platform == 'ios' }}
-              run: |
-                  echo "📦 Unzipping .app ..."
-                  pwd
-                  ls -la
-                  cd sample_applications
-                  unzip sample_login_ios.zip
-
-                  echo "📲 Booting iPhone 16 Pro Simulator..."
-                  xcrun simctl boot "iPhone 16 Pro"
-                  xcrun simctl bootstatus "iPhone 16 Pro" -b
-
-            # Start Appium
-            - name: Start Appium Server
-              run: |
-                  echo "🚀 Starting Appium Server..."
-                  nohup appium > appium.log 2>&1 &
-                  sleep 5
-
-                  - name: Run Tests (Android or iOS)
-                  run: |
-                    if [ "$PLATFORM" = "android" ]; then
-                      npm run android.app.cucumber
-                    elif [ "$PLATFORM" = "ios" ]; then
-                      npm run ios.app.cucumber
-                    else
-                      echo "Unknown platform: $PLATFORM"
-                      exit 1
-                    fi
+                  if [ "$PLATFORM" = "android" ]; then
+                    npm run android.app.cucumber
+                  elif [ "$PLATFORM" = "ios" ]; then
+                    npm run ios.app.cucumber
+                  else
+                    echo "Unknown platform: $PLATFORM"
+                    exit 1
+                  fi
 
             - name: Generate Allure Report
               run: npm run allure:generate
