@@ -51,7 +51,7 @@ jobs:
             COMPANY: ${{ github.event.inputs.company }}
             TEST_USER_PHONE: ${{ github.event.inputs.userphone }}
             TEST_USER_FULLNAME: ${{ github.event.inputs.userfullname }}
-            TEST_USER_FULLPIN: ${{ github.event.inputs.userfullpin }}
+            TEST_USER_PIN: ${{ github.event.inputs.userfullpin }}
             TAG: ${{ github.event.inputs.tag }}
 
         steps:
