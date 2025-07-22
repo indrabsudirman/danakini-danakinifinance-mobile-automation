@@ -1,108 +1,113 @@
 name: Danakini Danakinifinance Mobile Automation
 
 on:
-    workflow_dispatch:
-        inputs:
-            platform:
-                description: "Select Platform"
-                required: true
-                default: "android"
-                type: choice
-                options:
-                    - android
-                    - ios
-            device:
-                description: "Input any device name"
-                required: true
-                default: "emulator-5554"
-                type: string
-            userphone:
-                description: "Input Test User Phone"
-                required: false
-                default: ""
-                type: string
-            userfullname:
-                description: "Input Test User Full Name"
-                required: false
-                default: ""
-                type: string
-            userfullpin:
-                description: "Input Test User Full PIN"
-                required: false
-                default: ""
-                type: string
-            tag:
-                description: "Input tag expression (optional)"
-                required: false
-                default: ""
-                type: string
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Select Platform"
+        required: true
+        default: "android"
+        type: choice
+        options:
+          - android
+          - ios
+      device:
+        description: "Input any device name"
+        required: true
+        default: "emulator-5554"
+        type: string
+      userphone:
+        description: "Input Test User Phone"
+        required: false
+        default: ""
+        type: string
+      userfullname:
+        description: "Input Test User Full Name"
+        required: false
+        default: ""
+        type: string
+      userfullpin:
+        description: "Input Test User Full PIN"
+        required: false
+        default: ""
+        type: string
+      tag:
+        description: "Input tag expression (optional)"
+        required: false
+        default: ""
+        type: string
 
 jobs:
-    run-tests:
-        runs-on: self-hosted
-        env:
-            PLATFORM: ${{ github.event.inputs.platform }}
-            DEVICE: ${{ github.event.inputs.device }}
-            TEST_USER_PHONE: ${{ github.event.inputs.userphone }}
-            TEST_USER_FULLNAME: ${{ github.event.inputs.userfullname }}
-            TEST_USER_PIN: ${{ github.event.inputs.userfullpin }}
-            TAG: ${{ github.event.inputs.tag }}
+  run-tests:
+    runs-on: self-hosted
+    env:
+      PLATFORM: ${{ github.event.inputs.platform }}
+      DEVICE: ${{ github.event.inputs.device }}
+      TEST_USER_PHONE: ${{ github.event.inputs.userphone }}
+      TEST_USER_FULLNAME: ${{ github.event.inputs.userfullname }}
+      TEST_USER_PIN: ${{ github.event.inputs.userfullpin }}
+      TAG: ${{ github.event.inputs.tag }}
 
-        steps:
-            - name: Checkout repo
-              uses: actions/checkout@v3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-            - name: Install dependencies
-              run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-            - name: Run Tests (Android or iOS)
-              run: |
-                  if [ "$PLATFORM" = "android" ]; then
-                    if [ -n "$TAG" ]; then
-                      npm run android.app.cucumber:tag -- "$TAG"
-                    else
-                      npm run android.app.cucumber
-                    fi
-                  elif [ "$PLATFORM" = "ios" ]; then
-                    if [ -n "$TAG" ]; then
-                      npm run ios.app.cucumber:tag -- "$TAG"
-                    else
-                      npm run ios.app.cucumber
-                    fi
-                  else
-                    echo "Unknown platform: $PLATFORM"
-                    exit 1
-                  fi
+      - name: Clean old Allure folders
+        run: |
+          rm -rf ./allure-results
+          rm -rf ./allure-report
 
-            - name: Generate Allure Report
-              if: always()
-              run: npm run allure:generate
+      - name: Run Tests (Android or iOS)
+        run: |
+          if [ "$PLATFORM" = "android" ]; then
+            if [ -n "$TAG" ]; then
+              npm run android.app.cucumber:tag -- "$TAG"
+            else
+              npm run android.app.cucumber
+            fi
+          elif [ "$PLATFORM" = "ios" ]; then
+            if [ -n "$TAG" ]; then
+              npm run ios.app.cucumber:tag -- "$TAG"
+            else
+              npm run ios.app.cucumber
+            fi
+          else
+            echo "Unknown platform: $PLATFORM"
+            exit 1
+          fi
 
-            - name: Debug Allure Report folder
-              if: always()
-              run: |
-                  echo "=== Checking allure-report structure ==="
-                  ls -la ./allure-report
-                  echo "=== Checking index.html ==="
-                  if [ -f ./allure-report/index.html ]; then
-                    echo "✅ index.html found!"
-                  else
-                    echo "❌ index.html NOT FOUND!"
-                    exit 1
-                  fi
+      - name: Generate Allure Report
+        if: always()
+        run: npm run allure:generate
 
-            - name: Upload Allure report as artifact
-              if: always()
-              uses: actions/upload-artifact@v4
-              with:
-                  name: allure-report
-                  path: ./allure-report
+      - name: Debug Allure Report folder
+        if: always()
+        run: |
+          echo "=== Checking allure-report structure ==="
+          ls -la ./allure-report
+          echo "=== Checking index.html ==="
+          if [ -f ./allure-report/index.html ]; then
+            echo "✅ index.html found!"
+          else
+            echo "❌ index.html NOT FOUND!"
+            exit 1
+          fi
 
-            - name: Deploy Allure report to GitHub Pages
-              if: always()
-              uses: peaceiris/actions-gh-pages@v4
-              with:
-                  personal_token: ${{ secrets.GH_PAGES_TOKEN }}
-                  publish_dir: ./allure-report
-                  publish_branch: gh-pages
-                  commit_message: "Deploy Allure report"
+      - name: Upload Allure report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: ./allure-report
+
+      - name: Deploy Allure report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.GH_PAGES_TOKEN }}
+          publish_dir: ./allure-report
+          publish_branch: gh-pages
+          commit_message: "Deploy fresh Allure report"
