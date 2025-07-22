@@ -16,11 +16,6 @@ on:
                 required: true
                 default: "emulator-5554"
                 type: string
-            company:
-                description: "Input any company name"
-                required: true
-                default: "Danakini"
-                type: string
             userphone:
                 description: "Input Test User Phone"
                 required: false
@@ -84,6 +79,10 @@ jobs:
               if: always()
               run: npm run allure:generate
 
+            - name: List Allure Report folder (debug)
+              if: always()
+              run: ls -R ./allure-report
+
             - name: Upload Allure report as artifact
               if: always()
               uses: actions/upload-artifact@v4
@@ -95,7 +94,7 @@ jobs:
               if: always()
               uses: peaceiris/actions-gh-pages@v4
               with:
-                  github_token: ${{ secrets.GITHUB_TOKEN }}
+                  personal_token: ${{ secrets.GH_PAGES_TOKEN }}
                   publish_dir: ./allure-report
                   publish_branch: gh-pages
                   commit_message: "Deploy Allure report"
