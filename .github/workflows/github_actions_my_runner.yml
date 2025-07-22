@@ -1,0 +1,121 @@
+name: Danakini Danakinifinance Mobile Automation
+
+on:
+    workflow_dispatch:
+        inputs:
+            platform:
+                description: "Select Platform"
+                required: true
+                default: "android"
+                type: choice
+                options:
+                    - android
+                    - ios
+            device:
+                description: "Input any device name"
+                required: true
+                default: "emulator-5554"
+                type: string
+            company:
+                description: "Input any company name"
+                required: true
+                default: "Danakini"
+                type: string
+            userphone:
+                description: "Input Test User Phone"
+                required: false
+                default: ""
+                type: string
+            userfullname:
+                description: "Input Test User Full Name"
+                required: false
+                default: ""
+                type: string
+            userfullpin:
+                description: "Input Test User Full PIN"
+                required: false
+                default: ""
+                type: string
+
+jobs:
+    run-tests:
+        runs-on: self-hosted
+
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@v3
+
+            - name: Install dependencies with Pipenv
+              run: pipenv install --dev
+
+            # Android Emulator
+            - name: Start Android Emulator
+              if: ${{ github.event.inputs.platform == 'android' }}
+              run: |
+                  echo "🔄 Starting Android Emulator..."
+                  nohup emulator -avd Pixel_8_Pro_API_36 > emulator.log 2>&1 &
+                  adb wait-for-device
+                  adb shell input keyevent 82
+                  echo "✅ Android Emulator is ready."
+
+            - name: Show Current Working Directory
+              run: pwd
+
+            # iOS Simulator
+            - name: Setup iOS Simulator & Install .app
+              if: ${{ github.event.inputs.platform == 'ios' }}
+              run: |
+                  echo "📦 Unzipping .app ..."
+                  pwd
+                  ls -la
+                  cd sample_applications
+                  unzip sample_login_ios.zip
+
+                  echo "📲 Booting iPhone 16 Pro Simulator..."
+                  xcrun simctl boot "iPhone 16 Pro"
+                  xcrun simctl bootstatus "iPhone 16 Pro" -b
+
+            # Start Appium
+            - name: Start Appium Server
+              run: |
+                  echo "🚀 Starting Appium Server..."
+                  nohup appium > appium.log 2>&1 &
+                  sleep 5
+
+            - name: Run Pytest (Android)
+              if: ${{ github.event.inputs.platform == 'android' }}
+              run: pipenv run pytest -m "android and loginNegative" --alluredir=reports/allure-results
+
+            - name: Run Pytest (iOS)
+              if: ${{ github.event.inputs.platform == 'ios' }}
+              run: pipenv run pytest --platform=ios -m "ios and loginNegative" --alluredir=reports/allure-results
+
+            # Generate Allure HTML
+            - name: Generate Allure Report (HTML)
+              run: |
+                  echo "📊 Generating Allure HTML Report..."
+                  allure generate reports/allure-results --clean -o reports/allure-report
+
+            # Zip HTML report
+            - name: Compress Allure HTML Report
+              run: |
+                  echo "🗜️ Compressing Allure HTML Report..."
+                  zip -r reports/allure-report.zip reports/allure-report
+
+            # Shutdown iOS Simulator
+            - name: Shutdown iOS Simulator
+              if: ${{ github.event.inputs.platform == 'ios' }}
+              run: |
+                  echo "🛑 Shutting down iPhone 16 Pro Simulator..."
+                  xcrun simctl shutdown "iPhone 16 Pro"
+
+            # Set timestamp variable
+            - name: Set TIMESTAMP
+              run: echo "TIMESTAMP=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_ENV
+
+            # Upload Allure HTML as Artifact
+            - name: Upload Allure Report (ZIP)
+              uses: actions/upload-artifact@v4
+              with:
+                  name: allure-report-${{ github.event.inputs.platform }}-${{ env.TIMESTAMP }}
+                  path: reports/allure-report.zip
